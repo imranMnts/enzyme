@@ -2657,6 +2657,59 @@ describe('shallow', () => {
 
       expect(shallow(<Comp />).debug()).to.equal('');
     });
+
+    describe('child components', () => {
+      class Child extends React.Component {
+        constructor(...args) {
+          super(...args);
+          this.state = { a: 'a' };
+        }
+
+        render() {
+          const { _ } = this.props;
+          const { a } = this.state;
+          return (
+            <div>
+              {_}
+              {a}
+            </div>
+          );
+        }
+      }
+
+      class Parent extends React.Component {
+        constructor(...args) {
+          super(...args);
+          this.state = { _: 1 };
+        }
+
+        render() {
+          const { _ } = this.state;
+          return <Child _={_} />;
+        }
+      }
+
+      it('sets the state of the parent', () => {
+        const wrapper = shallow(<Parent />);
+
+        expect(wrapper.debug()).to.eql('<Child _={1} />');
+
+        return new Promise((resolve) => {
+          wrapper.setState({ _: 2 }, () => {
+            expect(wrapper.debug()).to.eql('<Child _={2} />');
+            resolve();
+          });
+        });
+      });
+
+      it('sets the state of the child', () => {
+        const wrapper = shallow(<Parent />);
+
+        expect(wrapper.debug()).to.eql('<Child _={1} />');
+
+        expect(() => wrapper.find(Child).setState({ a: 'b' })).to.throw(Error, 'ShallowWrapper::setState() can only be called on the root');
+      });
+    });
   });
 
   describe('.is(selector)', () => {
@@ -3208,6 +3261,50 @@ describe('shallow', () => {
 
         const wrapper = shallow(<Foo />);
         expect(() => wrapper.state()).to.throw(Error, 'ShallowWrapper::state() can only be called on class components');
+      });
+    });
+
+    describe('child components', () => {
+      class Child extends React.Component {
+        constructor(...args) {
+          super(...args);
+          this.state = { a: 'a' };
+        }
+
+        render() {
+          const { _ } = this.props;
+          const { a } = this.state;
+          return (
+            <div>
+              {_}
+              {a}
+            </div>
+          );
+        }
+      }
+
+      class Parent extends React.Component {
+        constructor(...args) {
+          super(...args);
+          this.state = { _: 1 };
+        }
+
+        render() {
+          const { _ } = this.state;
+          return <Child _={_} />;
+        }
+      }
+
+      it('gets the state of the parent', () => {
+        const wrapper = shallow(<Parent />);
+
+        expect(wrapper.state()).to.eql({ _: 1 });
+      });
+
+      it('gets the state of the child', () => {
+        const wrapper = shallow(<Parent />);
+
+        expect(() => wrapper.find(Child).state()).to.throw(Error, 'ShallowWrapper::state() can only be called on the root');
       });
     });
   });

@@ -2965,6 +2965,64 @@ describeWithDOM('mount', () => {
 
       expect(mount(<Comp />).debug()).to.equal('<Comp />');
     });
+
+    describe('child components', () => {
+      class Child extends React.Component {
+        constructor(...args) {
+          super(...args);
+          this.state = { a: 'a' };
+        }
+
+        render() {
+          const { _ } = this.props;
+          const { a } = this.state;
+          return (
+            <div>
+              {_}
+              {a}
+            </div>
+          );
+        }
+      }
+
+      class Parent extends React.Component {
+        constructor(...args) {
+          super(...args);
+          this.state = { _: 1 };
+        }
+
+        render() {
+          const { _ } = this.state;
+          return <Child _={_} />;
+        }
+      }
+
+      it('sets the state of the parent', () => {
+        const wrapper = mount(<Parent />);
+
+        expect(wrapper.text().trim()).to.eql('1a');
+
+        return new Promise((resolve) => {
+          wrapper.setState({ _: 2 }, () => {
+            expect(wrapper.text().trim()).to.eql('2a');
+            resolve();
+          });
+        });
+      });
+
+      it('sets the state of the child', () => {
+        const wrapper = mount(<Parent />);
+
+        expect(wrapper.text().trim()).to.eql('1a');
+
+        return new Promise((resolve) => {
+          wrapper.find(Child).setState({ a: 'b' }, () => {
+            expect(wrapper.text().trim()).to.eql('1b');
+            resolve();
+          });
+        });
+      });
+    });
   });
 
   describe('.is(selector)', () => {
@@ -3515,6 +3573,50 @@ describeWithDOM('mount', () => {
 
         const wrapper = mount(<Foo />);
         expect(() => wrapper.state()).to.throw(Error, 'ReactWrapper::state() can only be called on class components');
+      });
+    });
+
+    describe('child components', () => {
+      class Child extends React.Component {
+        constructor(...args) {
+          super(...args);
+          this.state = { a: 'a' };
+        }
+
+        render() {
+          const { _ } = this.props;
+          const { a } = this.state;
+          return (
+            <div>
+              {_}
+              {a}
+            </div>
+          );
+        }
+      }
+
+      class Parent extends React.Component {
+        constructor(...args) {
+          super(...args);
+          this.state = { _: 1 };
+        }
+
+        render() {
+          const { _ } = this.state;
+          return <Child _={_} />;
+        }
+      }
+
+      it('gets the state of the parent', () => {
+        const wrapper = mount(<Parent />);
+
+        expect(wrapper.state()).to.eql({ _: 1 });
+      });
+
+      it('gets the state of the child', () => {
+        const wrapper = mount(<Parent />);
+
+        expect(wrapper.find(Child).state()).to.eql({ a: 'a' });
       });
     });
   });
